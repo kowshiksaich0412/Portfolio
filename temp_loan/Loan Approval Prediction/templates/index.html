@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loan Approval Prediction System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #2563eb;
+            --secondary-blue: #1e40af;
+            --success-green: #10b981;
+            --danger-red: #ef4444;
+            --warning-orange: #f59e0b;
+            --light-gray: #f3f4f6;
+            --border-gray: #e5e7eb;
+            --text-dark: #111827;
+            --text-light: #6b7280;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-dark);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        .form-section {
+            padding: 40px;
+        }
+
+        .form-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 30px;
+            color: var(--text-dark);
+            border-bottom: 2px solid var(--primary-blue);
+            padding-bottom: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .form-row.full {
+            grid-template-columns: 1fr;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.95rem;
+        }
+
+        .label-info {
+            color: var(--text-light);
+            font-size: 0.85rem;
+            font-weight: 400;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid var(--border-gray);
+            border-radius: 8px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        input:hover, select:hover {
+            border-color: var(--primary-blue);
+        }
+
+        button.btn-predict {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 20px;
+        }
+
+        button.btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+        }
+
+        button.btn-predict:active {
+            transform: translateY(0);
+        }
+
+        button.btn-predict:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spinner {
+            display: none;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid white;
+            width: 20px;
+            height: 20px;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .result-section {
+            display: none;
+            padding: 40px;
+            background: linear-gradient(135deg, #f0f9ff, #f0fdf4);
+            border-top: 2px solid var(--border-gray);
+        }
+
+        .result-section.show {
+            display: block;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        .result-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-dark);
+        }
+
+        .result-box {
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 5px solid;
+        }
+
+        .result-box.approved {
+            background: #d1fae5;
+            border-color: var(--success-green);
+        }
+
+        .result-box.rejected {
+            background: #fee2e2;
+            border-color: var(--danger-red);
+        }
+
+        .result-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .result-box.approved .result-text {
+            color: var(--success-green);
+        }
+
+        .result-box.rejected .result-text {
+            color: var(--danger-red);
+        }
+
+        .result-subtext {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .metric {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-gray);
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+
+        .error-box {
+            display: none;
+            padding: 15px;
+            background: #fee2e2;
+            border: 1px solid var(--danger-red);
+            border-radius: 8px;
+            color: var(--danger-red);
+            margin-bottom: 20px;
+        }
+
+        .error-box.show {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .reset-btn {
+            background: var(--text-light);
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+
+        .reset-btn:hover {
+            background: var(--text-dark);
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 600px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .metrics {
+                grid-template-columns: 1fr;
+            }
+
+            .form-section, .result-section {
+                padding: 25px;
+            }
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .confidence-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--border-gray);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-blue), var(--secondary-blue));
+            transition: width 0.6s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏦 Loan Approval Prediction</h1>
+            <p>Advanced ML-based Loan Application Assessment System</p>
+        </div>
+
+        <div class="main-card">
+            <div class="form-section">
+                <h2 class="form-title">Applicant Information</h2>
+
+                <!-- Error Box -->
+                <div class="error-box" id="errorBox"></div>
+
+                <!-- Application Form -->
+                <form id="loanForm">
+                    <!-- Row 1: Age and Income -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="age">
+                                Age (years)
+                                <span class="label-info">18-70</span>
+                            </label>
+                            <input type="number" id="age" name="age" min="18" max="70" 
+                                   placeholder="e.g., 35" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="income">
+                                Annual Income ($)
+                                <span class="label-info">USD</span>
+                            </label>
+                            <input type="number" id="income" name="income" min="10000" 
+                                   placeholder="e.g., 75000" required>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Credit Score and Employment Length -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="creditScore">
+                                Credit Score
+                                <span class="label-info">300-850</span>
+                            </label>
+                            <input type="number" id="creditScore" name="creditScore" 
+                                   min="300" max="850" placeholder="e.g., 720" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="employmentLength">
+                                Employment Length (years)
+                                <span class="label-info">0-50</span>
+                            </label>
+                            <input type="number" id="employmentLength" name="employmentLength" 
+                                   min="0" max="50" placeholder="e.g., 10" required>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: Loan Amount and Interest Rate -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="loanAmount">
+                                Requested Loan Amount ($)
+                                <span class="label-info">USD</span>
+                            </label>
+                            <input type="number" id="loanAmount" name="loanAmount" min="5000" 
+                                   placeholder="e.g., 250000" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="interestRate">
+                                Interest Rate (%)
+                                <span class="label-info">2.0-10.0</span>
+                            </label>
+                            <input type="number" id="interestRate" name="interestRate" 
+                                   min="2" max="10" step="0.1" placeholder="e.g., 4.5" required>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Loan Type and Employment Type -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="loanType">
+                                Loan Type
+                                <span class="label-info">Required</span>
+                            </label>
+                            <select id="loanType" name="loanType" required>
+                                <option value="">-- Select Loan Type --</option>
+                                <option value="Personal">Personal</option>
+                                <option value="Auto">Auto</option>
+                                <option value="Business">Business</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="employmentType">
+                                Employment Type
+                                <span class="label-info">Required</span>
+                            </label>
+                            <select id="employmentType" name="employmentType" required>
+                                <option value="">-- Select Employment Type --</option>
+                                <option value="Employed">Employed</option>
+                                <option value="Self-Employed">Self-Employed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn-predict">
+                        <span class="spinner" id="loadingSpinner"></span>
+                        <span id="buttonText">Get Prediction</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- Result Section -->
+            <div class="result-section" id="resultSection">
+                <div class="result-title">Prediction Result</div>
+
+                <div class="result-box" id="resultBox">
+                    <div class="result-text" id="resultText"></div>
+                    <div class="result-subtext" id="resultSubtext"></div>
+                </div>
+
+                <div class="metrics">
+                    <div class="metric">
+                        <div class="metric-label">Approval Probability</div>
+                        <div class="metric-value" id="approvalProb">0%</div>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="approvalBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-label">Confidence Score</div>
+                        <div class="metric-value" id="confidenceScore">0%</div>
+                    </div>
+                </div>
+
+                <button class="reset-btn" onclick="resetForm()">← Make Another Prediction</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>💼 Loan Approval Prediction System v1.0</p>
+            <p>powered by Machine Learning | 2026</p>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('loanForm');
+        const resultSection = document.getElementById('resultSection');
+        const errorBox = document.getElementById('errorBox');
+        const spinner = document.getElementById('loadingSpinner');
+        const buttonText = document.getElementById('buttonText');
+
+        // Form submission
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            hideError();
+            makePrediton();
+        });
+
+        async function makePrediton() {
+            // Disable button and show spinner
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            spinner.style.display = 'block';
+            buttonText.style.display = 'none';
+
+            try {
+                // Get form data
+                const formData = {
+                    age: document.getElementById('age').value,
+                    income: document.getElementById('income').value,
+                    credit_score: document.getElementById('creditScore').value,
+                    employment_length: document.getElementById('employmentLength').value,
+                    loan_amount: document.getElementById('loanAmount').value,
+                    interest_rate: document.getElementById('interestRate').value,
+                    loan_type: document.getElementById('loanType').value,
+                    employment_type: document.getElementById('employmentType').value
+                };
+
+                // Send prediction request
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    displayResult(result);
+                } else {
+                    showError(result.error || 'Prediction failed. Please try again.');
+                }
+            } catch (error) {
+                showError('Error connecting to server. Please check and try again.');
+                console.error('Prediction error:', error);
+            } finally {
+                // Enable button and hide spinner
+                submitBtn.disabled = false;
+                spinner.style.display = 'none';
+                buttonText.style.display = 'inline';
+            }
+        }
+
+        function displayResult(result) {
+            const resultBox = document.getElementById('resultBox');
+            const resultText = document.getElementById('resultText');
+            const resultSubtext = document.getElementById('resultSubtext');
+            const approvalProb = document.getElementById('approvalProb');
+            const confidenceScore = document.getElementById('confidenceScore');
+            const approvalBar = document.getElementById('approvalBar');
+
+            // Update result status
+            const isApproved = result.prediction === 'Approved';
+            resultBox.className = isApproved ? 'result-box approved' : 'result-box rejected';
+            resultText.textContent = result.prediction.toUpperCase();
+            resultSubtext.textContent = isApproved 
+                ? '✓ Your loan application has been approved!' 
+                : '✗ Unfortunately, your loan application was not approved at this time.';
+
+            // Update metrics
+            const approvalProbability = (result.approval_probability * 100).toFixed(1);
+            const confidence = result.confidence.toFixed(1);
+
+            approvalProb.textContent = approvalProbability + '%';
+            confidenceScore.textContent = confidence + '%';
+            approvalBar.style.width = approvalProbability + '%';
+
+            // Scroll to result
+            resultSection.classList.add('show');
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showError(message) {
+            errorBox.textContent = '⚠️ ' + message;
+            errorBox.classList.add('show');
+        }
+
+        function hideError() {
+            errorBox.classList.remove('show');
+        }
+
+        function resetForm() {
+            form.reset();
+            resultSection.classList.remove('show');
+            hideError();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Form validation on input
+        document.querySelectorAll('input, select').forEach(field => {
+            field.addEventListener('blur', function() {
+                if (this.value === '') {
+                    this.style.borderColor = 'var(--border-gray)';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
